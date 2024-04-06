@@ -1,0 +1,51 @@
+---
+- name: Settings application Java server 
+  hosts: app01
+
+  user: vagrant
+  become: yes
+
+  vars:
+    - dbhost: "db01"
+    - dbname: "notes"
+    - dbusername: "notesapps"
+    - dbpassword: "devopsmaonamassa"
+  tasks:
+    - name: Settings hosts lab ansible 
+      lineinfile: 
+        dest: /etc/hosts
+        state: present 
+        line: "{{item}}"
+      with_items:
+        - 192.168.10.2 control-node
+        - 192.168.10.3 app01
+        - 192.168.10.4 db01
+    - name: Add user app
+      user:
+        name: app 
+        comment: Application user 
+        uid: 500
+    - name:  Installing Maven
+      yum:
+        name: maven 
+        state: latest 
+    - name: Installing Java
+      yum:
+        name: java-1.8.0-openjdk
+        state: latest
+    - name: Creating app directory
+      file:
+        path: /opt/notes
+        state: directory
+        owner: app
+        group: app
+    - name: Clone do repo Notes - app
+      git:
+        repo: 'https://github.com/callicoder/spring-boot-mysql-rest-api-tutorial.git'
+        dest: /opt/notes
+        clone: yes
+        force: yes
+    - name: Settings properties file for layer database
+      template:
+        src: application.properties
+        dest: /opt/notes/src/main/resources/application.properties
